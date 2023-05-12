@@ -40,21 +40,28 @@ class SIMULATION():
                 currentY = self.Ypositions[t][p]
                 tempArrY = np.delete(self.Ypositions[t], p)
                 
-                for x,y in np.nditer([tempArrX, tempArrY]):
-                    coll = ((x-0.0000001 < currentX < x+0.0000001) and (y-0.0000001 < currentY < y+0.0000001))
-
-                #coll = (currentX == np.any(tempArrX)) and (currentY == np.any(tempArrY))
-                #coll = (collX==True) and (collY==True)
-                if coll == True:
-                    print('x:', currentX, tempArrX)
-                    print('y:', currentY, tempArrY)
-                    collidingparticle = np.argwhere(coll == True)
-                    print('\ncollidingparticle', collidingparticle, '\n\n\n')
-                    
-                    self.particles[p].x[t+1] = -self.particles[p].x[t]
-                    self.particles[p].y[t+1] = -self.particles[p].y[t]
-                    self.particles[collidingparticle].x[t+1] = -self.particles[collidingparticle].x[t]
-                    self.particles[collidingparticle].y[t+1] = -self.particles[collidingparticle].y[t]
+                collXdict = {}
+                collYdict = {}
+                for x in tempArrX:
+                    collX = (x-0.0000001 < currentX < x+0.0000001)
+                    collXdict[np.argwhere(x)] = collX
+                for y in tempArrY:
+                    collY = (y-0.0000001 < currentY < y+0.0000001)
+                    collYdict[np.argwhere(y)] = collY
+                
+                for key in collXdict:
+                    if (collXdict[key] == True) and (collYdict[key] == True):
+                        print(key)
+                        
+                        # print('x:', currentX, tempArrX)
+                        # print('y:', currentY, tempArrY)
+                        # collidingparticle = np.argwhere(coll == True)
+                        # print('\ncollidingparticle', collidingparticle, '\n\n\n')
+                        
+                        # self.particles[p].x[t+1] = -self.particles[p].x[t]
+                        # self.particles[p].y[t+1] = -self.particles[p].y[t]
+                        # self.particles[collidingparticle].x[t+1] = -self.particles[collidingparticle].x[t]
+                        # self.particles[collidingparticle].y[t+1] = -self.particles[collidingparticle].y[t]
 
     def collision(self):
         array = np.zeros((self.simTime, self.numParticles, 2))
@@ -78,7 +85,7 @@ class SIMULATION():
 
 np.random.seed(0)
 sim = SIMULATION(3, np.arange(10), 5)
-sim.collision()
+sim.check_collision()
 # plt.plot(sim.particles[0].x, sim.particles[0].y, 'b', linestyle='', marker='o', markersize=10)
 # plt.plot(sim.particles[1].x, sim.particles[1].y, 'r', linestyle='', marker='o', markersize=8)
 # plt.plot(sim.particles[2].x, sim.particles[2].y, 'y', linestyle='', marker='o', markersize=6)
