@@ -1,114 +1,86 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits import mplot3d
+
+# class PARTICLE():
+#     def __init__(self, time, s):
+#         self.x = np.zeros(len(time))
+#         self.y = np.zeros(len(time))
+#         self.theta = np.random.rand(len(time))*(2*np.pi)
+
+#         for t in time[1:]:
+#             self.x[t] = self.x[t-1] + (s * np.cos(self.theta[t]))
+#             self.y[t] = self.y[t-1] + (s * np.sin(self.theta[t]))
 
 class PARTICLE():
-    def __init__(self, time, s):
-        self.x = np.zeros(len(time))
-        self.y = np.zeros(len(time))
-        # self.theta = np.random.rand(len(time))*(2*np.pi)
-        theta = [0, np.pi/2, 3*np.pi/2, 2*np.pi]
-        self.theta = np.random.choice(theta, size=len(time))
-
-        for t in time[1:]:
-            self.x[t] = self.x[t-1] + (s * np.cos(self.theta[t]))
-            self.y[t] = self.y[t-1] + (s * np.sin(self.theta[t]))
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
 
 class SIMULATION():
-    def __init__(self, numParticles, time, s):
+    def __init__(self, numParticles, simTime, s):
         self.numParticles = numParticles
-        self.time = time
-        self.simTime = len(self.time)
+        self.simTime = simTime
+        self.time = np.arange(self.simTime)
+
+        x1 = np.zeros(self.simTime)
+        y1 = np.zeros(self.simTime)
+        x2 = np.zeros(self.simTime)
+        y2 = np.zeros(self.simTime)
+        for t in self.time:
+            x1[t] = 20 - t
+            y1[t] = 20 - t
+            x2[t] = t
+            y2[t] = t
 
         self.particles = {}
-        self.Xpositions = np.zeros((self.simTime, self.numParticles))
-        self.Ypositions = np.zeros((self.simTime, self.numParticles))
+        # for p in range(numParticles):
+        #     self.particles[p] = PARTICLE()
+        self.particles[0] = PARTICLE(x1, y1)
+        self.particles[1] = PARTICLE(x2, y2)
 
-        for p in range(numParticles):
-            self.particles[p] = PARTICLE(self.time, s)
-        
-        for t in self.time:
-            for p in self.particles:
-                self.Xpositions[t][p] = self.particles[p].x[t]
-                self.Ypositions[t][p] = self.particles[p].y[t]
-
+    def dist(self, pos1, pos2):
+        return np.sqrt(((pos1[0]-pos2[0])**2)+((pos1[1]-pos2[1])**2))
     
-    def check_collision(self):
-        for t in self.time[1:]:
+    def check(self):
+        for t in self.time[1:self.simTime-1]:
+            positions = {}
+            coll = {}
             for p in self.particles:
-                currentX = self.Xpositions[t][p]
-                tempArrX = np.delete(self.Xpositions[t], p)
-                currentY = self.Ypositions[t][p]
-                tempArrY = np.delete(self.Ypositions[t], p)
-                
-                collXdict = {}
-                collYdict = {}
-                for x in tempArrX:
-                    collX = (x-0.0000001 < currentX < x+0.0000001)
-                    collXdict[np.argwhere(x)] = collX
-                for y in tempArrY:
-                    collY = (y-0.0000001 < currentY < y+0.0000001)
-                    collYdict[np.argwhere(y)] = collY
-                
-                for key in collXdict:
-                    if (collXdict[key] == True) and (collYdict[key] == True):
-                        print(key)
-                        
-                        # print('x:', currentX, tempArrX)
-                        # print('y:', currentY, tempArrY)
-                        # collidingparticle = np.argwhere(coll == True)
-                        # print('\ncollidingparticle', collidingparticle, '\n\n\n')
-                        
-                        # self.particles[p].x[t+1] = -self.particles[p].x[t]
-                        # self.particles[p].y[t+1] = -self.particles[p].y[t]
-                        # self.particles[collidingparticle].x[t+1] = -self.particles[collidingparticle].x[t]
-                        # self.particles[collidingparticle].y[t+1] = -self.particles[collidingparticle].y[t]
-
-    def collision(self):
-        array = np.zeros((self.simTime, self.numParticles, 2))
-        for t in self.time:
-            for p in self.particles:
-                array[t][p][0] = self.particles[p].x[t]
-                array[t][p][1] = self.particles[p].y[t]
+                for q in self.particles:
+                    xp = self.particles[p].x[t]
+                    yp = self.particles[p].y[t]
+                    xq = self.particles[q].x[t]
+                    yq = self.particles[q].y[t]
+                    if self.dist((xp,yp),(xq,yq)) <= 0.0000001:
+                        if (xp,yp) in positions:
+                            positions[(xp,yp)].append(p)
+                            coll[(p,q)] = True
+                        elif (xq,yq) in positions:
+                            positions[(xq,yq)].append(q)
+                            coll[(p,q)] = True
+                        else:
+                            positions[(xp,yp)] = [p]
+                            positions[(xq,yq)] = [q]
+                            coll[(p,q)] = False
+            if coll[(p,q)] == True:
+                print('Collision at t=', t)
+                self.particles[p].x[t+1] = self.particles[q].x[t-1]
+                self.particles[p].y[t+1] = self.particles[q].y[t-1]
+                self.particles[q].x[t+1] = self.particles[p].x[t-1]
+                self.particles[q].y[t+1] = self.particles[p].y[t-1]
         
-        for t in self.time[1:]:
-            for p in self.particles:
-                current = array[t][p]
-                compare = np.delete(array[t], p, axis=0)
-                print('\n', t, current, compare)
-                if np.all(current) == np.all(np.any(compare, axis=0)):
-                    print('\nTRUE1')
-                    collidingparticle = np.argwhere(np.all(current) == np.all(np.any(compare, axis=0)))
-                    if type(collidingparticle) == int:
-                        print('\nTRUE2', collidingparticle)
-                else:
-                    print('\nFALSE1')
+    def plot(self):
+        fig = plt.figure()
+        ax = plt.axes(projection='3d')
+        for i in range(self.numParticles):
+            ax.plot3D(self.particles[i].x, self.particles[i].y, np.arange(self.simTime))
+        # plt.savefig('RandomWalk'+str(self.simTime)+str(self.numParticles)+'.png', dpi=600)
+        plt.show()
 
-np.random.seed(0)
-sim = SIMULATION(3, np.arange(10), 5)
-sim.check_collision()
-# plt.plot(sim.particles[0].x, sim.particles[0].y, 'b', linestyle='', marker='o', markersize=10)
-# plt.plot(sim.particles[1].x, sim.particles[1].y, 'r', linestyle='', marker='o', markersize=8)
-# plt.plot(sim.particles[2].x, sim.particles[2].y, 'y', linestyle='', marker='o', markersize=6)
-# plt.plot(sim.particles[3].x, sim.particles[3].y, 'm', linestyle='', marker='o', markersize=4)
-# plt.plot(sim.particles[4].x, sim.particles[4].y, 'c', linestyle='', marker='o', markersize=2)
-# plt.show()
-
-# time = np.arange(100000)
-# x = np.zeros(len(time))
-# y = np.zeros(len(time))
-# theta = np.zeros(len(time))
-# s = 5
-
-# for t in time[1:]:
-#     theta[t] = np.random.rand()*(2*np.pi)
-#     x[t] = x[t-1] + (s * np.cos(theta[t]))
-#     y[t] = y[t-1] + (s * np.sin(theta[t]))
-
-# plt.plot(x,y)
-# plt.show()
-
-# import numpy as np
-# a = np.random.randint(4,8,size=(2,3))
-# print(a)
-# for x in np.nditer(a, flags = ['external_loop'], order = 'C'):
-#     print(x)
+#np.random.seed(0)
+simTime = 20
+numParticles = 2
+sim = SIMULATION(numParticles, simTime, 5)
+sim.check()
+sim.plot()
