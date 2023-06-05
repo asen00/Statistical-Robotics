@@ -2,20 +2,23 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
 
-# class PARTICLE():
-#     def __init__(self, time, s):
-#         self.x = np.zeros(len(time))
-#         self.y = np.zeros(len(time))
-#         self.theta = np.random.rand(len(time))*(2*np.pi)
-
-#         for t in time[1:]:
-#             self.x[t] = self.x[t-1] + (s * np.cos(self.theta[t]))
-#             self.y[t] = self.y[t-1] + (s * np.sin(self.theta[t]))
-
 class PARTICLE():
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
+    def __init__(self, time, s):
+        self.x = np.zeros(len(time))
+        self.y = np.zeros(len(time))
+        self.theta = np.random.rand(len(time))*(2*np.pi)
+
+        self.xvel = s * np.sin(self.theta)
+        self.yvel = s * np.cos(self.theta)
+
+        for t in time[1:]:
+            self.x[t] = self.x[t-1] + (s * np.cos(self.theta[t]))
+            self.y[t] = self.y[t-1] + (s * np.sin(self.theta[t]))
+
+# class PARTICLE():
+#     def __init__(self, x, y):
+#         self.x = x
+#         self.y = y
 
 class SIMULATION():
     def __init__(self, numParticles, simTime, s):
@@ -42,10 +45,10 @@ class SIMULATION():
     def dist(self, pos1, pos2):
         return np.sqrt(((pos1[0]-pos2[0])**2)+((pos1[1]-pos2[1])**2))
     
-    def check(self):
+    def check_collision(self):
         for t in self.time[1:self.simTime-1]:
             positions = {}
-            coll = {}
+            self.coll = {}
             for p in self.particles:
                 for q in self.particles:
                     xp = self.particles[p].x[t]
@@ -55,21 +58,21 @@ class SIMULATION():
                     if self.dist((xp,yp),(xq,yq)) <= 0.0000001:
                         if (xp,yp) in positions:
                             positions[(xp,yp)].append(p)
-                            coll[(p,q)] = True
+                            self.coll[(p,q)] = True
                         elif (xq,yq) in positions:
                             positions[(xq,yq)].append(q)
-                            coll[(p,q)] = True
+                            self.coll[(p,q)] = True
                         else:
                             positions[(xp,yp)] = [p]
                             positions[(xq,yq)] = [q]
-                            coll[(p,q)] = False
-            if coll[(p,q)] == True:
-                print('Collision at t=', t)
-                self.particles[p].x[t+1] = self.particles[q].x[t-1]
-                self.particles[p].y[t+1] = self.particles[q].y[t-1]
-                self.particles[q].x[t+1] = self.particles[p].x[t-1]
-                self.particles[q].y[t+1] = self.particles[p].y[t-1]
-        
+                            self.coll[(p,q)] = False
+    
+    def act_after_collision(self):
+        for t in self.time[1:self.simTime-1]:
+            for key in self.coll:
+                if self.coll[key] == True:
+                    pass
+
     def plot(self):
         fig = plt.figure()
         ax = plt.axes(projection='3d')
@@ -82,5 +85,6 @@ class SIMULATION():
 simTime = 20
 numParticles = 2
 sim = SIMULATION(numParticles, simTime, 5)
-sim.check()
+sim.check_collision()
+sim.act_after_collision()
 sim.plot()
